@@ -104,6 +104,12 @@ exports.authenticateUserToAdmin = async(req,res,next)=>{
                 message: 'user not found'
             })
         }
+        user.isAdmin= true
+        if (user.isAdmin === false) {
+            return res.status(401).json({
+                message: 'Unauthorized: you are not allowed to perform this action'
+            })
+        }
         req.user=user
         next()
         

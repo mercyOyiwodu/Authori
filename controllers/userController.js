@@ -3,11 +3,13 @@ const bcrypt = require('bcryptjs');
 const sendEmail = require('../middleware/nodemailer');
 const jwt = require('jsonwebtoken');
 const { signUpTemplate } = require('../utils/mailTemplates');
+const {validate} = require('../helpers/utilities');
+const {registerUserSchema, loginUserSchema} =require('../validation/user');
 
 exports.register = async (req, res) => {
     try {
-
-        const { fullName, email, gender, password, username } = req.body;
+        const validatedData = await validate(req.body, registerUserSchema)
+        const { fullName, email, gender, password, username } = validatedData;
 
         const usernameExists = await userModel.findOne({ userName: username.toLowerCase() });
         if (usernameExists) {
@@ -44,9 +46,9 @@ exports.register = async (req, res) => {
         })
     }
     catch (error) {
-        console.log(error.message)
         res.status(500).json({
-            message: 'Error registering User'
+            message: 'Error registering User',
+            data: error.message
         })
     }
 }
@@ -66,7 +68,6 @@ exports.verifyEmail = async (req, res) => {
                 message: 'User not found'
             })
         };
-        console.log(user);
 
         user.isVerified = true;
         await user.save()
@@ -203,7 +204,8 @@ exports.resetPassword = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const validatedData = await validate(req.body,loginUserSchema)
+        const { email, password } = validatedData;
         const userExists = await userModel.findOne({ email: email.toLowerCase() });
         if (userExists === null) {
             return res.status(404).json({
@@ -229,9 +231,9 @@ exports.login = async (req, res) => {
             token
         });
     } catch (error) {
-        console.log(error.message);
         res.status(500).json({
-            message: 'Error Logging in User'
+            message: 'Error Logging in User',
+            data : error.message
         });
     }
 };
