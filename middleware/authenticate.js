@@ -17,7 +17,7 @@ exports.authenticate = async (req, res, next) => {
                 message: 'Invalid Token'
             })
         }
-        const decodedToken = await jwt.verify(token, process.env.JWT_SECRET)
+        const decodedToken =jwt.verify(token, process.env.JWT_SECRET)
         const user = await userModel.findById(decodedToken.userId)
 
         if (!user) {

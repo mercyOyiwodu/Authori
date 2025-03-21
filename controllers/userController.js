@@ -143,7 +143,7 @@ exports.forgotPassword = async (req, res) => {
         const mailOptions = {
             subject: 'Password Reset',
             email: user.email,
-            html: forgotPasswordTemplate(link, firstName)
+            html: forgotPassworTemplate(link, firstName)
         }
         await sendEmail(mailOptions)
         res.status(200).json({
