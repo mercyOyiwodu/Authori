@@ -3,8 +3,9 @@ const bcrypt = require('bcryptjs');
 const sendEmail = require('../middleware/nodemailer');
 const jwt = require('jsonwebtoken');
 const { signUpTemplate } = require('../utils/mailTemplates');
-const {validate} = require('../helpers/utilities');
-const {registerUserSchema, loginUserSchema} =require('../validation/user');
+const { validate } = require('../helpers/utilities');
+const { registerUserSchema, loginUserSchema } = require('../validation/user');
+
 
 exports.register = async (req, res) => {
     try {
@@ -167,7 +168,7 @@ exports.resetPassword = async (req, res) => {
         const { token } = req.params;
 
         const { password, confirmPassword } = req.body;
-        const { userId } = await jwt.verify(token, process.env.JWT_SECRET,{expiresIn:'1h'})
+        const { userId } = await jwt.verify(token, process.env.JWT_SECRET, { expiresIn: '1h' })
         const user = await userModel.findById(userId)
         if (!user) {
             return res.status(404).json({
@@ -204,7 +205,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const validatedData = await validate(req.body,loginUserSchema)
+        const validatedData = await validate(req.body, loginUserSchema)
         const { email, password } = validatedData;
         const userExists = await userModel.findOne({ email: email.toLowerCase() });
         if (userExists === null) {
@@ -212,7 +213,7 @@ exports.login = async (req, res) => {
                 message: `User with email: ${email} does not exist`
             });
         }
-        const isCorrectPassword = await bcrypt.compare(password, userExists.password);
+        const isCorrectPassword = bcrypt.compare(password, userExists.password);
         if (isCorrectPassword === false) {
             return res.status(400).json({
                 message: "Incorrect Password"
@@ -224,19 +225,53 @@ exports.login = async (req, res) => {
                 message: "User not verified, Please check your email to verify"
             });
         }
-        const token = await jwt.sign({ userId: userExists._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        if (userExists.isLoggedIn === true) {
+            return res.status(400).json({
+                message: "User already logged in"
+            });
+        }
+        userExists.isLoggedIn = true;
+        const token = jwt.sign({
+            userId: userExists._id,
+            isLoggedIn: userExists.isLoggedIn
+        }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        await userExists.save()
         res.status(200).json({
             message: 'Login successful',
             data: userExists,
             token
         });
+
     } catch (error) {
         res.status(500).json({
             message: 'Error Logging in User',
-            data : error.message
+            data: error.message
         });
     }
 };
+
+exports.logOut = async (req, res) => {
+    try {
+        const userExists = await userModel.findById(req.user.userId);
+        if (!userExists) {
+            return res.status(404).json({
+                message: 'user not found'
+            })
+        }
+        userExists.isLoggedIn = false
+        await userExists.save()
+        res.status(200).json({
+            message: 'user logged out successfully'
+        })
+    } catch (error) {
+        console.log(error);
+        
+        res.status(500).json({
+            message: 'Error Logging out User'
+        });
+    }
+};
+
 exports.changePassword = async (req, res) => {
     try {
         const { id } = req.params
@@ -247,7 +282,7 @@ exports.changePassword = async (req, res) => {
                 message: 'user not found'
             })
         }
-        const isMatch = await bcrypt.compare(newPassword, user.password)
+        const isMatch = bcrypt.compare(newPassword, user.password)
         if (isMatch === null) {
             return res.status(400).json({
                 message: 'current password is the same as formal one'
@@ -255,7 +290,7 @@ exports.changePassword = async (req, res) => {
         }
 
         const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(newPassword,salt)
+        const hashedPassword = await bcrypt.hash(newPassword, salt)
 
         user.password = hashedPassword
 
@@ -282,8 +317,8 @@ exports.changeUserToAdmin = async (req, res) => {
                 message: 'user not found'
             })
         }
-        
-        if (!req.user.isAdmin) { 
+
+        if (!req.user.isAdmin) {
             console.log("User is not an admin.");
 
             return res.status(403).json({

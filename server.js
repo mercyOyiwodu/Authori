@@ -1,17 +1,19 @@
-const express = require('express')
-require('./cofig/database')
-const userRouter = require('./routes/userRouter')
-const scoreRouter = require('./routes/scoreRouter')
+const express = require('express');
+require('./cofig/database');
+const userRouter = require('./routes/userRouter');
+const scoreRouter = require('./routes/scoreRouter');
 
-const port = process.env.PORT || 3232
-const app = express()
+const port = process.env.PORT || 3232;
+const app = express();
 
-app.use(express.json())
-app.use('/api/v1',userRouter)
-app.use('/api/v1',scoreRouter)
+app.use(express.json());
+app.use('/api/v1', userRouter);
+app.use('/api/v1', scoreRouter);
+
 const swaggerJsdoc = require('swagger-jsdoc');
-const swagger_Ui = require('swagger-ui-express');
+const swaggerUi = require('swagger-ui-express');
 
+// Swagger configuration
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -19,14 +21,31 @@ const options = {
       title: 'Hello World, This is my first swagger documentation ❤❤',
       version: '1.0.0',
     },
+    servers: [
+      {
+        url: 'http://localhost:3232',
+        description: 'Development server',
+      },
+      {
+        url: 'https://myapp.com',
+        description: 'Production server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+        },
+      },
+    },
   },
-  apis: ['./routes*.js'], 
+  apis: ['./routes/*.js'], 
 };
 
 const openapiSpecification = swaggerJsdoc(options);
-app.use('/api-docs', swagger_Ui.serve, swagger_Ui.setup(openapiSpecification));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
-
-app.listen(port,()=>{
-    console.log(`My Server Is Up And On Port ${port}`)
-})
+app.listen(port, () => {
+  console.log(`My Server Is Up And On Port ${port}`);
+});

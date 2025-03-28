@@ -25,7 +25,13 @@ exports.authenticate = async (req, res, next) => {
                 message: 'Authentication failed : user not found'
             })
         }
-        req.user = user
+        if (user.isLoggedIn !== decodedToken.isLoggedIn) {
+            return res.status(401).json({
+                message: 'Unathorized: you must be logged in to perform this action'
+            })
+        }
+        req.user = decodedToken0
+        await user.save()
 
         next()
     } catch (error) {

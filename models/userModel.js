@@ -36,9 +36,13 @@ const UserSchema = new mongoose.Schema({
     scoreId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'scores'
+    },
+    isLoggedIn:{
+        type: Boolean,
+        default: false
     }
 },{timestamps: true})
 
-const userModel =mongoose.model('users',UserSchema)
+const userModel = mongoose.model('users',UserSchema)
 
 module.exports = userModel

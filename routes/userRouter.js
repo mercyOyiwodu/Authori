@@ -1,5 +1,7 @@
-const { register, login, verifyEmail, resendVerificationEmail, forgotPassword, changePassword, changeUserToAdmin } = require('../controllers/userController');
-const { authenticateUserToAdmin } = require('../middleware/authenticate');
+const { register, login, verifyEmail, resendVerificationEmail, forgotPassword, changePassword, changeUserToAdmin, logOut } = require('../controllers/userController');
+const { authenticateUserToAdmin, authenticate } = require('../middleware/authenticate');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const router = require('express').Router();
 
@@ -193,8 +195,9 @@ router.post('/register', register);
 router.post('/verify-email', verifyEmail);
 router.post('/reset-password', forgotPassword);
 router.post('/login', login);
+router.post('/logout', authenticate, logOut);
 router.post('/resend-verification', resendVerificationEmail);
-router.put('/change-password/:id', changePassword);
+router.put('/change-password/:id',authenticate, changePassword);
 router.patch('/user-admin/:id', authenticateUserToAdmin, changeUserToAdmin);
 
 module.exports = router;
